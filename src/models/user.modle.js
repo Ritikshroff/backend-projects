@@ -49,7 +49,7 @@ const userSchema = new Schema({
 }, { timestamps: true });
 
 userSchema.methods.genrateAceessToken = function () {
-    jwt.sign({ id: this._id, email: this.email, UserName: this.UserName, fullName: this.fullName }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRY });
+    return jwt.sign({ id: this._id, email: this.email, UserName: this.UserName, fullName: this.fullName }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRY });
 }
 
 userSchema.methods.genrateRefreshToken = function () {
