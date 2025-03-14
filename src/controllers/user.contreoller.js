@@ -4,6 +4,7 @@ import { User } from '../models/user.modle.js';
 import uploadonCloudnary from '../utils/cloudenery.js';
 import ApiResponse from '../utils/apiResponse.js';
 import jwt from 'jsonwebtoken';
+import { json } from 'express';
 
 const genrateAceessTokenandRefreshToken = async (userId) => {
     try {
@@ -231,4 +232,107 @@ const refreshAccessToken = asynchandler(async (req, res) => {
     }
 })
 
-export { registerUser, loginUser, logoutUser , refreshAccessToken};
+const ChangeCurrentUserPassword = asynchandler(async (req, res) => {
+
+    // get user details from frontend
+    const { oldPassword, newPassword } = req.body;
+    const user = await User.findById(req.user?._id)
+    const ispasswordcorrect = await user.isPasswordCorrect(oldPassword);
+
+    if (!ispasswordcorrect) {
+        throw new ApiError(401, 'Old password is invalid');
+    }
+
+    user.password = newPassword
+    await user.save({ validateBeforeSave: false });
+
+    return res.status(200), json(new ApiResponse(200, {}, "password changed successfully"));
+
+})
+
+const getCurrentUser = asynchandler(async (req, res) => {
+    return res
+        .status(200)
+        .json(new ApiError(200, req.user, "User details fetched successfully"));
+})
+
+const updateAccountDetails = asynchandler(async (req, res) => {
+    const { fullName, email } = req.body;
+
+    if (!fullName || !email) {
+        throw new ApiError(400, 'All fields are required');
+    }
+
+    const user = User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: { fullName, email }
+        }, {
+        new: true,
+    }).select('-password');
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, user, 'User details updated successfully'));
+})
+
+const updateUserAvatar = asynchandler(async (req, res) => {
+    const avatartLoaclPath = req.files?.path
+    if (!avatartLoaclPath) {
+        throw new ApiError(400, 'Avatar file is required');
+    }
+
+    const avatart = await uploadonCloudnary(avatartLoaclPath)
+    if (!avatart) {
+        throw new ApiError(500, 'Error uploading avatar');
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: { avatar: avatart.url }
+        },
+        { new: true }
+    ).select('-password')
+    return res
+        .status(200)
+        .json(new ApiResponse(200, user, 'Avatar updated successfully'));
+})
+
+const updateUserCoverImage = asynchandler(async (req, res) => {
+    const covertLoaclPath = req.files?.path
+    if (!covertLoaclPath) {
+        throw new ApiError(400, 'Cover image file is required');
+    }
+
+    const coverImage = await uploadonCloudnary(covertLoaclPath)
+    if (!coverImage) {
+        throw new ApiError(500, 'Error uploading avatar');
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: { coverImage: coverImage.url }
+        },
+        { new: true }
+    ).select('-password')
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, user, 'Cover image updated successfully'));
+})
+
+
+
+export {
+    registerUser,
+    loginUser,
+    logoutUser,
+    refreshAccessToken,
+    ChangeCurrentUserPassword,
+    getCurrentUser,
+    updateAccountDetails,
+    updateUserAvatar,
+    updateUserCoverImage
+};
