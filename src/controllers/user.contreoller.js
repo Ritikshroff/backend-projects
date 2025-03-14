@@ -25,22 +25,34 @@ const registerUser = asynchandler(async (req, res) => {
     const { fullName, email, username, password } = req.body
     console.log("email", email);
     console.log("username", username);
+    console.log("password", password);
+    console.log("fullName", fullName);
+    
+
 
     if ([email, password, fullName, username].some((field) => field?.trim() === "")) {
         throw new ApiError(400, 'All fields are required');
     }
 
     // check if user already exists: email, username
-    existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or: [{ email }, { username }]
     })
     if (existedUser) {
         throw new ApiError (409, 'User already exists with this email or username');
     }
 
+    if (!req.files || !req.files.avatar || !req.files.avatar[0]) {
+        throw new ApiError(400, 'Avatar file is required');
+    }
+    
+    if (!req.files.coverImage || !req.files.coverImage[0]) {
+        throw new ApiError(400, 'Cover image is required');
+    }
+
     // check images, check for avatar
     const avatarOnlocalPath = req.files?.avatar[0]?.path;
-    const coverImageOnLocalPath = req.files?.cover[0]?.path;
+    const coverImageOnLocalPath = req.files?.coverImage[0]?.path;
 
     if (!avatarOnlocalPath) {
         throw new ApiError(400, 'Avatar is required');
@@ -67,6 +79,7 @@ const registerUser = asynchandler(async (req, res) => {
     })
 
     // remove password and refresh token field from response
+    // const createdUser = await user.findById(user._id).select('-password -refreshToken');
     const createdUser = await User.findById(user._id).select('-password -refreshToken');
 
     if (!createdUser) {

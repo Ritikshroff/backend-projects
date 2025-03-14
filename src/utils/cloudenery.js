@@ -19,6 +19,7 @@ import fs from "fs";
                 resource_type: "auto"
             })
             console.log("Image uploaded successfully on cloudnary", response.url);
+            fs.unlinkSync(path) // remove the file
             return response;
             
         } catch (error) {
