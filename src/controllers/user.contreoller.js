@@ -202,7 +202,7 @@ const refreshAccessToken = asynchandler(async (req, res) => {
             process.env.REFRESH_TOKEN_SECRET,
         );
 
-        const user = User.findById(decodedToken?._id)
+        const user = await User.findById(decodedToken?._id)
 
         if (!user) {
             throw new ApiError(401, 'User not found invalid refresh token');
@@ -263,7 +263,7 @@ const updateAccountDetails = asynchandler(async (req, res) => {
         throw new ApiError(400, 'All fields are required');
     }
 
-    const user = User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user._id,
         {
             $set: { fullName, email }
