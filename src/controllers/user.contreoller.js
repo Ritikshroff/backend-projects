@@ -253,7 +253,7 @@ const ChangeCurrentUserPassword = asynchandler(async (req, res) => {
 const getCurrentUser = asynchandler(async (req, res) => {
     return res
         .status(200)
-        .json(new ApiError(200, req.user, "User details fetched successfully"));
+        .json(new ApiResponse(200, req.user, "User details fetched successfully"));
 })
 
 const updateAccountDetails = asynchandler(async (req, res) => {

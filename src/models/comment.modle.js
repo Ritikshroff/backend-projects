@@ -8,11 +8,10 @@ const commentSchema = new Schema({
         type: String,
         required: true,
     },
-    video: {
+    post: {
         type: Schema.Types.ObjectId,
-        ref: "Video",
-        required:
-            true
+        ref: "Post",
+        required: true
     },
     owner: {
         type: Schema.Types.ObjectId,
