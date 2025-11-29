@@ -8,16 +8,47 @@ import ApiResponse from '../utils/apiResponse.js';
 import mongoose from 'mongoose';
 
 // Create a new post
+// const createPost = asynchandler(async (req, res) => {
+//     const { content } = req.body;
+
+//     if (!content || content.trim() === '') {
+//         throw new ApiError(400, 'Content is required');
+//     }
+
+//     // Handle image uploads (up to 5 images)
+//     const imageUrls = [];
+//     if (req.files && req.files.length > 0) {
+//         for (const file of req.files) {
+//             const uploadedImage = await uploadonCloudnary(file.path);
+//             if (uploadedImage) {
+//                 imageUrls.push(uploadedImage.url);
+//             }
+//         }
+//     }
+
+//     const post = await Post.create({
+//         content,
+//         images: imageUrls,
+//         owner: req.user._id,
+//     });
+
+//     return res.status(201).json(
+//         new ApiResponse(201, post, 'Post created successfully')
+//     );
+// });
+
 const createPost = asynchandler(async (req, res) => {
     const { content } = req.body;
 
-    if (!content || content.trim() === '') {
-        throw new ApiError(400, 'Content is required');
+    // Allow text-only OR image-only OR both, but block empty posts
+    if (!content && (!req.files || req.files.length === 0)) {
+        throw new ApiError(400, "Post must contain text or at least one image");
     }
 
-    // Handle image uploads (up to 5 images)
     const imageUrls = [];
-    if (req.files && req.files.length > 0) {
+
+    // Upload each image to Cloudinary
+    if (Array.isArray(req.files) && req.files.length > 0) {
         for (const file of req.files) {
             const uploadedImage = await uploadonCloudnary(file.path);
             if (uploadedImage) {
@@ -27,15 +58,16 @@ const createPost = asynchandler(async (req, res) => {
     }
 
     const post = await Post.create({
-        content,
+        content: content || "",
         images: imageUrls,
         owner: req.user._id,
     });
 
-    return res.status(201).json(
-        new ApiResponse(201, post, 'Post created successfully')
-    );
+    return res
+        .status(201)
+        .json(new ApiResponse(201, post, "Post created successfully"));
 });
+
 
 // Get all posts (Feed) - Paginated
 const getAllPosts = asynchandler(async (req, res) => {

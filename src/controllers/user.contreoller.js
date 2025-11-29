@@ -279,38 +279,90 @@ const updateAccountDetails = asynchandler(async (req, res) => {
         .json(new ApiResponse(200, user, 'User details updated successfully'));
 })
 
+// const updateUserAvatar = asynchandler(async (req, res) => {
+//     const avatartLoaclPath = req.files?.path
+//     if (!avatartLoaclPath) {
+//         throw new ApiError(400, 'Avatar file is required');
+//     }
+
+//     const avatart = await uploadonCloudnary(avatartLoaclPath)
+//     if (!avatart) {
+//         throw new ApiError(500, 'Error uploading avatar');
+//     }
+
+//     const user = await User.findByIdAndUpdate(
+//         req.user?._id,
+//         {
+//             $set: { avatar: avatart.url }
+//         },
+//         { new: true }
+//     ).select('-password')
+//     return res
+//         .status(200)
+//         .json(new ApiResponse(200, user, 'Avatar updated successfully'));
+// })
+
 const updateUserAvatar = asynchandler(async (req, res) => {
-    const avatartLoaclPath = req.files?.path
-    if (!avatartLoaclPath) {
-        throw new ApiError(400, 'Avatar file is required');
+    const avatarLocalPath = req.file?.path;  // <-- FIXED
+
+    if (!avatarLocalPath) {
+        throw new ApiError(400, "Avatar file is required");
     }
 
-    const avatart = await uploadonCloudnary(avatartLoaclPath)
-    if (!avatart) {
-        throw new ApiError(500, 'Error uploading avatar');
+    const avatar = await uploadonCloudnary(avatarLocalPath);
+
+    if (!avatar) {
+        throw new ApiError(500, "Error uploading avatar");
     }
 
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
-            $set: { avatar: avatart.url }
+            $set: { avatar: avatar.url }
         },
         { new: true }
-    ).select('-password')
-    return res
-        .status(200)
-        .json(new ApiResponse(200, user, 'Avatar updated successfully'));
-})
+    ).select("-password");
+
+    return res.status(200)
+        .json(new ApiResponse(200, user, "Avatar updated successfully"));
+});
+
+
+// const updateUserCoverImage = asynchandler(async (req, res) => {
+//     const covertLoaclPath = req.files?.path
+//     if (!covertLoaclPath) {
+//         throw new ApiError(400, 'Cover image file is required');
+//     }
+
+//     const coverImage = await uploadonCloudnary(covertLoaclPath)
+//     if (!coverImage) {
+//         throw new ApiError(500, 'Error uploading avatar');
+//     }
+
+//     const user = await User.findByIdAndUpdate(
+//         req.user?._id,
+//         {
+//             $set: { coverImage: coverImage.url }
+//         },
+//         { new: true }
+//     ).select('-password')
+
+//     return res
+//         .status(200)
+//         .json(new ApiResponse(200, user, 'Cover image updated successfully'));
+// })
 
 const updateUserCoverImage = asynchandler(async (req, res) => {
-    const covertLoaclPath = req.files?.path
-    if (!covertLoaclPath) {
-        throw new ApiError(400, 'Cover image file is required');
+    const coverLocalPath = req.file?.path;   // <-- FIXED
+
+    if (!coverLocalPath) {
+        throw new ApiError(400, "Cover image file is required");
     }
 
-    const coverImage = await uploadonCloudnary(covertLoaclPath)
+    const coverImage = await uploadonCloudnary(coverLocalPath);
+
     if (!coverImage) {
-        throw new ApiError(500, 'Error uploading avatar');
+        throw new ApiError(500, "Error uploading cover image");
     }
 
     const user = await User.findByIdAndUpdate(
@@ -319,12 +371,12 @@ const updateUserCoverImage = asynchandler(async (req, res) => {
             $set: { coverImage: coverImage.url }
         },
         { new: true }
-    ).select('-password')
+    ).select("-password");
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200, user, 'Cover image updated successfully'));
-})
+    return res.status(200)
+        .json(new ApiResponse(200, user, "Cover image updated successfully"));
+});
+
 
 const getUserChanelProfile = asynchandler(async (req, res) => {
     const { username } = req.params

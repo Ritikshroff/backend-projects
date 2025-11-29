@@ -1,6 +1,17 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import fs from "fs";
+
+
+const uploadPath = "./public/temp";
+
+// Create the folder if it doesn't exist (Railway needs this)
+if (!fs.existsSync(uploadPath)) {
+    fs.mkdirSync(uploadPath, { recursive: true });
+    console.log("📁 Created folder:", uploadPath);
+}
+
 
 const allowedOrigins = [
     'http://localhost:5173',
