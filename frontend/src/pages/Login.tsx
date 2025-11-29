@@ -58,7 +58,13 @@ const Login = () => {
         password: formData.password,
       };
 
-      await apiClient.post("/users/login", payload);
+      const response = await apiClient.post("/users/login", payload);
+
+      // Store tokens in localStorage
+      const { accessToken, refreshToken } = response.data.data;
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
+
       toast.success("Login successful! Welcome back! 🎉");
       navigate("/feed");
     } catch (err: any) {
