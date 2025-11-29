@@ -15,25 +15,24 @@ app.set('trust proxy', 1); // Trust first proxy (Railway LB) for secure cookies
 
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
+        console.log("🔍 Incoming Origin:", origin);
+
         if (!origin) return callback(null, true);
-        
-        // Check if origin is in the allowed static list
-        if (allowedOrigins.indexOf(origin) !== -1) {
+
+        if (allowedOrigins.includes(origin)) {
             return callback(null, true);
         }
 
-        // Dynamic check for Vercel preview deployments
-        if (origin.endsWith('.vercel.app')) {
+        if (origin.endsWith(".vercel.app")) {
             return callback(null, true);
         }
 
-        // If no match, block the request
-        return callback(new Error('Not allowed by CORS'));
+        console.log("❌ Blocked by CORS:", origin);
+        return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: "GET,POST,PUT,DELETE",
-}))
+}));
 
 
 app.use(express.json({ limit: '16kb' }));
