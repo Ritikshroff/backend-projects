@@ -10,6 +10,7 @@ const allowedOrigins = [
 ].filter(Boolean); // Remove undefined/null values
 
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy (Railway LB) for secure cookies
 
 app.use(cors({
     origin: allowedOrigins,

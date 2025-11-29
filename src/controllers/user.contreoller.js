@@ -158,7 +158,7 @@ const loginUser = asynchandler(async (req, res) => {
     return res.status(200)
         .cookie('accessToken', accessToken, options)
         .cookie('refreshToken', refreshToken, options)
-        .json(200,
+        .json(
             new ApiResponse(200,
                 {
                     user: loggedInuser, accessToken, refreshToken
@@ -246,7 +246,7 @@ const ChangeCurrentUserPassword = asynchandler(async (req, res) => {
     user.password = newPassword
     await user.save({ validateBeforeSave: false });
 
-    return res.status(200), json(new ApiResponse(200, {}, "password changed successfully"));
+    return res.status(200).json(new ApiResponse(200, {}, "password changed successfully"));
 
 })
 
