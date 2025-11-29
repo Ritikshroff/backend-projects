@@ -13,6 +13,8 @@ const fixIndex = async () => {
         
         // Check if index exists first to avoid error
         const indexes = await User.collection.indexes();
+        console.log(indexes, "this is index");
+        
         const indexExists = indexes.some(idx => idx.name === 'UserName_1');
 
         if (indexExists) {

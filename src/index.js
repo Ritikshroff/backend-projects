@@ -19,17 +19,6 @@ connectDB()
         console.log("mongo db conection failed")
     }
     )
-
-
-
-
-
-
-
-
-
-
-
 // first way to connect to the database
 
 // import express from "express";
