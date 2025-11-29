@@ -6,6 +6,7 @@ const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
     'https://backend-projects-kappa.vercel.app',
+    'https://backend-projects-nvtqovuka-ritik-shroffs-projects.vercel.app',
     process.env.CORS_ORIGIN
 ].filter(Boolean); // Remove undefined/null values
 
@@ -13,7 +14,23 @@ const app = express();
 app.set('trust proxy', 1); // Trust first proxy (Railway LB) for secure cookies
 
 app.use(cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        // Check if origin is in the allowed static list
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            return callback(null, true);
+        }
+
+        // Dynamic check for Vercel preview deployments
+        if (origin.endsWith('.vercel.app')) {
+            return callback(null, true);
+        }
+
+        // If no match, block the request
+        return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
     methods: "GET,POST,PUT,DELETE",
 }))
