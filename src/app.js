@@ -2,11 +2,19 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://backend-projects-kappa.vercel.app',
+    process.env.CORS_ORIGIN
+].filter(Boolean); // Remove undefined/null values
+
 const app = express();
 
 app.use(cors({
-    origin: process.env.CORS_ORIGIN,
-    credentials: true
+    origin: allowedOrigins,
+    credentials: true,
+    methods: "GET,POST,PUT,DELETE",
 }))
 
 
