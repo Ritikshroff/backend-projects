@@ -46,27 +46,21 @@ export const varifyJwt = asynchandler(async (req, _, next) => {
             req.cookies?.accessToken ||
             req.header("Authorization")?.replace("Bearer ", "");
 
-        console.log("Cookies:", req.cookies);
-        console.log("Authorization header:", req.header("Authorization"));
-        console.log("Token extracted:", token);
-
         if (!token) {
-            throw new ApiError(401, "Unauthorized request");
+            throw new ApiError(401, "You need to be logged in to access this resource");
         }
 
         // Verify JWT format
         if (!token.includes('.') || token.split('.').length !== 3) {
-            throw new ApiError(401, "Malformed JWT token");
+            throw new ApiError(401, "Invalid authentication token");
         }
 
         const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-        console.log("Decoded token:", decodedToken);
 
-        // ✔ Your token uses ONLY "id"
+        // Your token uses "id" field
         const userId = decodedToken.id;
 
         const user = await User.findById(userId).select("-password -refreshToken");
-        console.log("User found:", user ? "Yes" : "No");
 
         if (!user) {
             throw new ApiError(401, "Invalid access token or user not found");
@@ -75,7 +69,12 @@ export const varifyJwt = asynchandler(async (req, _, next) => {
         req.user = user;
         next();
     } catch (error) {
-        console.log(error);
-        throw new ApiError(401, "Invalid request");
+        // Re-throw ApiError or convert JWT errors
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        
+        // JWT-specific errors will be caught by global error handler
+        throw error;
     }
 });

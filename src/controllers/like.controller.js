@@ -3,15 +3,17 @@ import ApiError from '../utils/apierror.js';
 import { Like } from '../models/like.modle.js';
 import { Post } from '../models/post.modle.js';
 import ApiResponse from '../utils/apiResponse.js';
+import { validateObjectId } from '../utils/validators.js';
 
 // Toggle like on a post
 const togglePostLike = asynchandler(async (req, res) => {
     const { postId } = req.params;
+    validateObjectId(postId, 'Post ID');
 
     // Check if post exists
     const post = await Post.findById(postId);
     if (!post) {
-        throw new ApiError(404, 'Post not found');
+        throw new ApiError(404, 'Post not found. Cannot like a non-existent post');
     }
 
     // Check if user already liked the post
@@ -51,6 +53,7 @@ const togglePostLike = asynchandler(async (req, res) => {
 // Get all likes for a post
 const getPostLikes = asynchandler(async (req, res) => {
     const { postId } = req.params;
+    validateObjectId(postId, 'Post ID');
 
     const likes = await Like.find({ post: postId })
         .populate('likedBy', 'username fullName avatar');

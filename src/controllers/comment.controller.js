@@ -4,11 +4,13 @@ import { Comment } from '../models/comment.modle.js';
 import { Post } from '../models/post.modle.js';
 import ApiResponse from '../utils/apiResponse.js';
 import mongoose from 'mongoose';
+import { validateObjectId, validatePagination } from '../utils/validators.js';
 
 // Add a comment to a post
 const addComment = asynchandler(async (req, res) => {
     const { postId } = req.params;
     const { content } = req.body;
+    validateObjectId(postId, 'Post ID');
 
     if (!content || content.trim() === '') {
         throw new ApiError(400, 'Comment content is required');
@@ -17,7 +19,7 @@ const addComment = asynchandler(async (req, res) => {
     // Check if post exists
     const post = await Post.findById(postId);
     if (!post) {
-        throw new ApiError(404, 'Post not found');
+        throw new ApiError(404, 'Post not found. Cannot add comment to non-existent post');
     }
 
     const comment = await Comment.create({
@@ -41,7 +43,9 @@ const addComment = asynchandler(async (req, res) => {
 // Get all comments for a post
 const getPostComments = asynchandler(async (req, res) => {
     const { postId } = req.params;
-    const { page = 1, limit = 20 } = req.query;
+    validateObjectId(postId, 'Post ID');
+    
+    const { page, limit } = validatePagination(req.query.page, req.query.limit);
 
     const aggregate = Comment.aggregate([
         {
@@ -74,10 +78,7 @@ const getPostComments = asynchandler(async (req, res) => {
         }
     ]);
 
-    const options = {
-        page: parseInt(page),
-        limit: parseInt(limit),
-    };
+    const options = { page, limit };
 
     const comments = await Comment.aggregatePaginate(aggregate, options);
 
@@ -89,16 +90,17 @@ const getPostComments = asynchandler(async (req, res) => {
 // Delete a comment
 const deleteComment = asynchandler(async (req, res) => {
     const { commentId } = req.params;
+    validateObjectId(commentId, 'Comment ID');
 
     const comment = await Comment.findById(commentId);
 
     if (!comment) {
-        throw new ApiError(404, 'Comment not found');
+        throw new ApiError(404, 'Comment not found or has been deleted');
     }
 
     // Check if user is the owner
     if (comment.owner.toString() !== req.user._id.toString()) {
-        throw new ApiError(403, 'You are not authorized to delete this comment');
+        throw new ApiError(403, "You don't have permission to delete this comment");
     }
 
     // Decrement comment count on post

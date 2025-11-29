@@ -5,6 +5,7 @@ import uploadonCloudnary from '../utils/cloudenery.js';
 import ApiResponse from '../utils/apiResponse.js';
 import jwt from 'jsonwebtoken'; 
 import { json } from 'express';
+import { isValidEmail, validatePassword, validateUsername, validateRequiredFields } from '../utils/validators.js';
 
 const genrateAceessTokenandRefreshToken = async (userId) => {
     try {
@@ -25,43 +26,41 @@ const genrateAceessTokenandRefreshToken = async (userId) => {
 }
 
 const registerUser = asynchandler(async (req, res) => {
-    // res.status(200).json({
-    //     message: 'User registered successfully',
-    //     success: true
-    // });
+    const { fullName, email, username, password } = req.body;
 
+    // Validate required fields
+    validateRequiredFields(req.body, ['fullName', 'email', 'username', 'password']);
 
-    // get user details from frontend
-    // validate user details
-    // check if user already exists: email, username
-    // check images, check for avatar
-    // upload images to cloudinary, avatar
-    // create user object - craete entery in database
-    // remove password and refresh token field from response
-    // check for user cretion
-    // return user details to frontend or if user exist and any other error sent the error message
-
-    // get user details from frontend
-    const { fullName, email, username, password } = req.body
-    console.log("email", email);
-    console.log("username", username);
-    console.log("password", password);
-    console.log("fullName", fullName);
-
-
-
-    if ([email, password, fullName, username].some((field) => field?.trim() === "")) {
-        throw new ApiError(400, 'All fields are required');
+    // Validate email format
+    if (!isValidEmail(email)) {
+        throw new ApiError(400, 'Please provide a valid email address');
     }
 
-    // check if user already exists: email, username
+    // Validate username
+    const usernameValidation = validateUsername(username);
+    if (!usernameValidation.isValid) {
+        throw new ApiError(400, usernameValidation.message);
+    }
+
+    // Validate password strength
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+        throw new ApiError(400, passwordValidation.message);
+    }
+
+    // Check if user already exists
     const existedUser = await User.findOne({
         $or: [{ email }, { username }]
-    })
+    });
+    
     if (existedUser) {
-        throw new ApiError(409, 'User already exists with this email or username');
+        const field = existedUser.email === email ? 'email' : 'username';
+        throw new ApiError(409, `An account with this ${field} already exists`, [
+            { field, message: `This ${field} is already registered` }
+        ]);
     }
 
+   // Check for avatar and cover image
     if (!req.files || !req.files.avatar || !req.files.avatar[0]) {
         throw new ApiError(400, 'Avatar file is required');
     }
@@ -70,25 +69,18 @@ const registerUser = asynchandler(async (req, res) => {
         throw new ApiError(400, 'Cover image is required');
     }
 
-    // check images, check for avatar
     const avatarOnlocalPath = req.files?.avatar[0]?.path;
     const coverImageOnLocalPath = req.files?.coverImage[0]?.path;
 
-    if (!avatarOnlocalPath) {
-        throw new ApiError(400, 'Avatar is required');
-    }
-    if (!coverImageOnLocalPath) {
-        throw new ApiError(400, 'Cover image is required');
-    }
-
+    // Upload images to Cloudinary
     const avatar = await uploadonCloudnary(avatarOnlocalPath);
     const coverImage = await uploadonCloudnary(coverImageOnLocalPath);
 
     if (!avatar || !coverImage) {
-        throw new ApiError(500, 'Error uploading images');
+        throw new ApiError(500, 'Failed to upload images. Please try again');
     }
 
-    // create user object - craete entery in database
+    // Create user
     const user = await User.create({
         fullName,
         email,
@@ -96,66 +88,58 @@ const registerUser = asynchandler(async (req, res) => {
         avatar: avatar.url,
         coverImage: coverImage.url,
         password
-    })
+    });
 
-    // remove password and refresh token field from response
-    // const createdUser = await user.findById(user._id).select('-password -refreshToken');
     const createdUser = await User.findById(user._id).select('-password -refreshToken');
 
     if (!createdUser) {
-        throw new ApiError(500, 'Error creating user');
+        throw new ApiError(500, 'Failed to create user account. Please try again');
     }
 
-    // return user details to frontend or if user exist and any other error sent the error message
     return res.status(201).json(
-        new ApiResponse(200, createdUser, 'User registered successfully')
-    )
-
-})
+        new ApiResponse(201, createdUser, 'Account created successfully! Welcome aboard!')
+    );
+});
 
 const loginUser = asynchandler(async (req, res) => {
+    const { email, username, password } = req.body;
 
-    // get user details from frontend (req body)
-    // validate user details with username or email
-    // check if user exists
-    // check password
-    // if user exist login either send a error message that user does not exist
-    // generate access token and refresh token
-    // send cookies to frontend
-    // return user details and tokens to frontend
-
-    // get user details from frontend (req body)
-    const { email, username, password } = req.body
-
+    // Validate that either email or username is provided
     if (!email && !username) {
-        throw new ApiError(400, 'Email or username is required');
+        throw new ApiError(400, 'Please provide either email or username');
     }
 
+    if (!password) {
+        throw new ApiError(400, 'Password is required');
+    }
+
+    // Find user
     const user = await User.findOne({
         $or: [{ username }, { email }]
-    })
+    });
 
     if (!user) {
-        throw new ApiError(404, 'User does not exist');
+        throw new ApiError(404, 'No account found with these credentials');
     }
 
+    // Verify password
     const ispasswordValid = await user.isPasswordCorrect(password);
 
     if (!ispasswordValid) {
-        throw new ApiError(401, 'Password is incorrect');
+        throw new ApiError(401, 'Invalid email or password');
     }
 
-    // generate access token and refresh token
-    const { accessToken, refreshToken } = await genrateAceessTokenandRefreshToken(user._id)
+    // Generate tokens
+    const { accessToken, refreshToken } = await genrateAceessTokenandRefreshToken(user._id);
 
-    // send cookies to frontend
     const loggedInuser = await User.findById(user._id).select('-password -refreshToken');
+    
     const options = {
         httpOnly: true,
         secure: true,
         sameSite: 'None',
         path: "/",
-    }
+    };
 
     return res.status(200)
         .cookie('accessToken', accessToken, options)
@@ -165,10 +149,10 @@ const loginUser = asynchandler(async (req, res) => {
                 {
                     user: loggedInuser, accessToken, refreshToken
                 },
-                "User logged in successfully"
+                "Login successful! Welcome back!"
             )
-        )
-})
+        );
+});
 
 const logoutUser = asynchandler(async (req, res) => {
 

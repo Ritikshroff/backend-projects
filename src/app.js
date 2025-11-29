@@ -77,10 +77,20 @@ app.get('/health', (req, res) => {
 import userRouter from './routes/user.routes.js';
 import postRouter from './routes/post.routes.js';
 
+// Error handling middleware imports
+import notFoundHandler from './middlewares/notFound.middleware.js';
+import errorHandler from './middlewares/errorHandler.middleware.js';
+
 
 // Routes declaration
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/posts', postRouter);
+
+// 404 Handler - must be after all routes
+app.use(notFoundHandler);
+
+// Global Error Handler - must be last
+app.use(errorHandler);
 
 
 export default app;

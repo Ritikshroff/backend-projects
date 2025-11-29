@@ -6,6 +6,7 @@ import { Comment } from '../models/comment.modle.js';
 import uploadonCloudnary from '../utils/cloudenery.js';
 import ApiResponse from '../utils/apiResponse.js';
 import mongoose from 'mongoose';
+import { validateObjectId, validatePagination } from '../utils/validators.js';
 
 // Create a new post
 // const createPost = asynchandler(async (req, res) => {
@@ -71,7 +72,7 @@ const createPost = asynchandler(async (req, res) => {
 
 // Get all posts (Feed) - Paginated
 const getAllPosts = asynchandler(async (req, res) => {
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = validatePagination(req.query.page, req.query.limit);
 
     const aggregate = Post.aggregate([
         {
@@ -101,10 +102,7 @@ const getAllPosts = asynchandler(async (req, res) => {
         }
     ]);
 
-    const options = {
-        page: parseInt(page),
-        limit: parseInt(limit),
-    };
+    const options = { page, limit };
 
     const posts = await Post.aggregatePaginate(aggregate, options);
 
@@ -116,7 +114,9 @@ const getAllPosts = asynchandler(async (req, res) => {
 // Get posts by specific user
 const getUserPosts = asynchandler(async (req, res) => {
     const { userId } = req.params;
-    const { page = 1, limit = 10 } = req.query;
+    validateObjectId(userId, 'User ID');
+    
+    const { page, limit } = validatePagination(req.query.page, req.query.limit);
 
     const aggregate = Post.aggregate([
         {
@@ -149,10 +149,7 @@ const getUserPosts = asynchandler(async (req, res) => {
         }
     ]);
 
-    const options = {
-        page: parseInt(page),
-        limit: parseInt(limit),
-    };
+    const options = { page, limit };
 
     const posts = await Post.aggregatePaginate(aggregate, options);
 
@@ -164,11 +161,12 @@ const getUserPosts = asynchandler(async (req, res) => {
 // Get single post by ID
 const getPostById = asynchandler(async (req, res) => {
     const { postId } = req.params;
+    validateObjectId(postId, 'Post ID');
 
     const post = await Post.findById(postId).populate('owner', 'username fullName avatar');
 
     if (!post) {
-        throw new ApiError(404, 'Post not found');
+        throw new ApiError(404, 'Post not found or has been deleted');
     }
 
     return res.status(200).json(
@@ -180,22 +178,24 @@ const getPostById = asynchandler(async (req, res) => {
 const updatePost = asynchandler(async (req, res) => {
     const { postId } = req.params;
     const { content } = req.body;
+    validateObjectId(postId, 'Post ID');
+
+    if (!content || content.trim() === '') {
+        throw new ApiError(400, 'Content is required to update the post');
+    }
 
     const post = await Post.findById(postId);
 
     if (!post) {
-        throw new ApiError(404, 'Post not found');
+        throw new ApiError(404, 'Post not found or has been deleted');
     }
 
     // Check if user is the owner
     if (post.owner.toString() !== req.user._id.toString()) {
-        throw new ApiError(403, 'You are not authorized to update this post');
+        throw new ApiError(403, "You don't have permission to update this post");
     }
 
-    if (content) {
-        post.content = content;
-    }
-
+    post.content = content;
     await post.save();
 
     return res.status(200).json(
@@ -206,16 +206,17 @@ const updatePost = asynchandler(async (req, res) => {
 // Delete post
 const deletePost = asynchandler(async (req, res) => {
     const { postId } = req.params;
+    validateObjectId(postId, 'Post ID');
 
     const post = await Post.findById(postId);
 
     if (!post) {
-        throw new ApiError(404, 'Post not found');
+        throw new ApiError(404, 'Post not found or has been deleted');
     }
 
     // Check if user is the owner
     if (post.owner.toString() !== req.user._id.toString()) {
-        throw new ApiError(403, 'You are not authorized to delete this post');
+        throw new ApiError(403, "You don't have permission to delete this post");
     }
 
     await Post.findByIdAndDelete(postId);
