@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Backend API Tester - Railway</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      h1 {
+        color: #667eea;
+        margin-bottom: 10px;
+        font-size: 2.5em;
+      }
+
+      .status {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: bold;
+        margin-bottom: 30px;
+      }
+
+      .status.live {
+        background: #10b981;
+        color: white;
+      }
+
+      .status.checking {
+        background: #f59e0b;
+        color: white;
+      }
+
+      .status.offline {
+        background: #ef4444;
+        color: white;
+      }
+
+      .info-box {
+        background: #f3f4f6;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+      }
+
+      .endpoint {
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        transition: all 0.3s;
+      }
+
+      .endpoint:hover {
+        border-color: #667eea;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+      }
+
+      .endpoint-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .method {
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-weight: bold;
+        font-size: 0.85em;
+      }
+
+      .method.get {
+        background: #10b981;
+        color: white;
+      }
+
+      .method.post {
+        background: #3b82f6;
+        color: white;
+      }
+
+      .method.delete {
+        background: #ef4444;
+        color: white;
+      }
+
+      .method.patch {
+        background: #f59e0b;
+        color: white;
+      }
+
+      .endpoint-url {
+        font-family: "Courier New", monospace;
+        color: #6b7280;
+        font-size: 0.9em;
+      }
+
+      button {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s;
+      }
+
+      button:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+
+      .response {
+        background: #1f2937;
+        color: #10b981;
+        padding: 15px;
+        border-radius: 8px;
+        font-family: "Courier New", monospace;
+        font-size: 0.9em;
+        margin-top: 20px;
+        max-height: 300px;
+        overflow-y: auto;
+        display: none;
+      }
+
+      .response.show {
+        display: block;
+      }
+
+      .url-box {
+        background: #667eea;
+        color: white;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        word-break: break-all;
+      }
+
+      .url-box a {
+        color: white;
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🚀 Backend API Tester</h1>
+      <div id="status" class="status checking">Checking...</div>
+
+      <div class="url-box">
+        <strong>Railway URL:</strong><br />
+        <a
+          href="https://backend-projects-production.up.railway.app"
+          target="_blank"
+        >
+          https://backend-projects-production.up.railway.app
+        </a>
+      </div>
+
+      <div class="info-box">
+        <h3>📊 Server Info</h3>
+        <div id="serverInfo">Loading...</div>
+      </div>
+
+      <h2>🔌 Available Endpoints</h2>
+
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method get">GET</span>
+          <span class="endpoint-url">/</span>
+        </div>
+        <button onclick="testEndpoint('/', 'GET')">Test Root</button>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method get">GET</span>
+          <span class="endpoint-url">/health</span>
+        </div>
+        <button onclick="testEndpoint('/health', 'GET')">Test Health</button>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method post">POST</span>
+          <span class="endpoint-url">/api/v1/users/register</span>
+        </div>
+        <p style="font-size: 0.9em; color: #6b7280">
+          Requires: fullName, email, username, password, avatar (file)
+        </p>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method post">POST</span>
+          <span class="endpoint-url">/api/v1/users/login</span>
+        </div>
+        <p style="font-size: 0.9em; color: #6b7280">
+          Requires: email, password
+        </p>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method get">GET</span>
+          <span class="endpoint-url">/api/v1/posts/feed</span>
+        </div>
+        <p style="font-size: 0.9em; color: #6b7280">Requires: Authentication</p>
+      </div>
+
+      <div id="response" class="response"></div>
+    </div>
+
+    <script>
+      const BASE_URL = "https://backend-projects-production.up.railway.app";
+
+      async function checkServerStatus() {
+        try {
+          const response = await fetch(`${BASE_URL}/`);
+          const data = await response.json();
+
+          document.getElementById("status").className = "status live";
+          document.getElementById("status").textContent = "🟢 LIVE";
+
+          document.getElementById("serverInfo").innerHTML = `
+                    <p><strong>Status:</strong> ${data.message}</p>
+                    <p><strong>Timestamp:</strong> ${new Date(data.timestamp).toLocaleString()}</p>
+                    <p><strong>Available Routes:</strong></p>
+                    <ul>
+                        <li>Users: ${data.endpoints.users}</li>
+                        <li>Posts: ${data.endpoints.posts}</li>
+                    </ul>
+                `;
+        } catch (error) {
+          document.getElementById("status").className = "status offline";
+          document.getElementById("status").textContent = "🔴 OFFLINE";
+          document.getElementById("serverInfo").innerHTML = `
+                    <p style="color: #ef4444;"><strong>Error:</strong> ${error.message}</p>
+                `;
+        }
+      }
+
+      async function testEndpoint(path, method = "GET") {
+        const responseDiv = document.getElementById("response");
+        responseDiv.className = "response show";
+        responseDiv.textContent = "Loading...";
+
+        try {
+          const response = await fetch(`${BASE_URL}${path}`, {
+            method: method,
+          });
+          const data = await response.json();
+
+          responseDiv.textContent = JSON.stringify(data, null, 2);
+        } catch (error) {
+          responseDiv.textContent = `Error: ${error.message}`;
+        }
+      }
+
+      // Check status on load
+      checkServerStatus();
+
+      // Refresh every 30 seconds
+      setInterval(checkServerStatus, 30000);
+    </script>
+  </body>
+</html>
