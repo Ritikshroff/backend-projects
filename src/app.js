@@ -15,6 +15,27 @@ app.use(express.urlencoded({ extended: true, limit: '16kb' }));
 app.use(express.static('public'));
 app.use(cookieParser());
 
+// Health check route
+app.get('/', (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: 'Backend API is running! 🚀',
+        timestamp: new Date().toISOString(),
+        endpoints: {
+            users: '/api/v1/users',
+            posts: '/api/v1/posts'
+        }
+    });
+});
+
+app.get('/health', (req, res) => {
+    res.status(200).json({ 
+        success: true, 
+        status: 'healthy',
+        uptime: process.uptime()
+    });
+});
+
 // routes import 
 import userRouter from './routes/user.routes.js';
 import postRouter from './routes/post.routes.js';
