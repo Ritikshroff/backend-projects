@@ -4,6 +4,7 @@
 # Railway URL: https://backend-projects-production.up.railway.app
 
 BASE_URL="https://backend-projects-production.up.railway.app"
+# BASE_URL="http://localhost:8000"
 
 echo "🚀 Testing Backend API on Railway..."
 echo "=================================="
